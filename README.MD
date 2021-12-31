@@ -99,6 +99,10 @@ Resources:
      **** <--  If there was a function check for Timeout this would NOT be found!
 ```
 * Validation errors don't easily indicate which item in CF caused the failure. So having lots of elements where only 1 causes the failure can make debugging the single failure difficult.
+* Outputs are cli, json only
+* No sonarcube integration
+* CLI based integration is (exit 0 on failure)
+
 
 ## TODO
 Items requiring followup include:
