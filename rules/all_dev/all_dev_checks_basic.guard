@@ -1,0 +1,156 @@
+#
+# Sample guard policy with all current dev checks.
+#
+
+
+## DynamoDB 
+rule dynamo_db_no_global_tables {
+    Resources.*[ Type == 'AWS::DynamoDB::GlobalTable' ] empty
+}
+
+## event bus
+let event_bus_policies = Resources.*[ Type == 'AWS::Events::EventBusPolicy' ]
+
+let invalid_principals = ["*", ""]
+
+rule event_bus_policy_not_permitting_global_access when %event_bus_policies !empty {
+    %event_bus_policies {
+       some Properties.Statement[*] {
+            Principal.AWS[*] not in %invalid_principals
+            Effect == "Allow"
+        }
+    }
+}
+
+## Lambda 
+let lambda_defs = Resources.*[ Type == 'AWS::Lambda::Function' ]
+
+rule lambda_assigns_role when %lambda_defs !empty {
+  %lambda_defs {
+    Properties.Role !empty
+  }
+}
+
+rule lambda_assigns_vpc when %lambda_defs !empty {
+  %lambda_defs {
+    Properties.VpcConfig !empty
+  }
+}
+
+## Log Groups 
+let log_groups = Resources.*[ Type == 'AWS::Logs::LogGroup' ]
+
+rule log_group_retention_policy when %log_groups !empty {
+  %log_groups {
+    Properties.RetentionInDays IN r[14,365]
+  }
+}
+
+
+## S3 
+rule s3_buckets_should_not_be_created {
+    Resources.*[ Type == 'AWS::S3::Bucket' ] empty
+}
+
+## API Gateway 
+let api_gws = Resources.*[ Type == 'AWS::Serverless::Api' ]
+
+rule sam_apigateway_is_private when %api_gws !empty {
+  %api_gws {
+    # must be private and have list of vpc endpoints
+    Properties.EndpointConfiguration.Type[*] == "PRIVATE"
+    Properties.EndpointConfiguration.VPCEndpointIds !empty
+  }
+}
+
+rule sam_apigateway_has_resource_policy_statement when sam_apigateway_is_private {
+  %api_gws {
+  	Properties.Auth.ResourcePolicy !empty
+  }
+}
+
+# SAM Lambda 
+let sam_lambda_defs = Resources.*[ Type == 'AWS::Serverless::Function' ]
+rule sam_lambda_assigns_role when %sam_lambda_defs !empty {
+  %sam_lambda_defs {
+    Properties.Role !empty
+  }
+}
+
+rule sam_lambda_assigns_vpc when %sam_lambda_defs !empty {
+  %sam_lambda_defs {
+    Properties.VpcConfig !empty
+  }
+}
+
+## Secrets Manager 
+rule secrets_manager_not_defined {
+    Resources.*[ Type == 'AWS::SecretsManager::Secret' ] empty
+}
+
+rule secrets_manager_no_secret_policies_defined {
+    Resources.*[ Type == 'AWS::SecretsManager::ResourcePolicy' ] empty
+}
+
+## SNS Topics 
+let sns_topics = Resources.*[ Type == 'AWS::SNS::Topic' ]
+
+rule sns_topics_use_default_encryption when %sns_topics !empty {
+    %sns_topics {
+        Properties.KmsMasterKeyId == "alias/aws/sns"
+    }
+}
+
+let sns_topic_policies = Resources.*[ Type == 'AWS::SNS::TopicPolicy' ]
+let invalid_principals = ["*", ""]
+
+rule sns_topic_policy_not_permitting_global_access when %sns_topic_policies !empty {
+    %sns_topic_policies {
+       some Properties.PolicyDocument.Statement[*] {
+            Principal not in %invalid_principals
+            Effect == "Allow"
+        }
+    }
+}
+
+
+## SQS Queues 
+let sqs_queues = Resources.*[ Type == 'AWS::SQS::Queue' ]
+
+rule sqs_queues_use_default_encryption when %sqs_queues !empty {
+    %sqs_queues {
+        Properties.KmsMasterKeyId == "alias/aws/sqs"
+    }
+}
+
+let sqs_policies = Resources.*[ Type == 'AWS::SQS::QueuePolicy' ]
+
+rule sqs_queue_policy_exists when %sqs_policies !empty {
+    %sqs_policies {
+        Properties.PolicyDocument !empty
+    }
+}
+
+rule sqs_queue_policy_required when %sqs_queues !empty {
+    sqs_queue_policy_exists
+}
+
+rule sqs_queue_policy_not_permitting_global_access when %sqs_policies !empty {
+    %sqs_policies {
+       some Properties.PolicyDocument.Statement[*] {
+            Principal not in %invalid_principals
+            Effect == "Allow"
+        }
+    }
+}
+
+rule sqs_queue_policy_only_permit_messages_from_vpc when %sqs_policies !empty {
+    %sqs_policies {
+       some Properties.PolicyDocument.Statement[*] {
+            Effect == "Deny"
+            Condition.*[ keys == /aws:[sS]ource(Vpc|VPC|Vpce|VPCE)/ ] !empty
+            Condition.StringNotEquals !empty
+        }
+    }
+}
+

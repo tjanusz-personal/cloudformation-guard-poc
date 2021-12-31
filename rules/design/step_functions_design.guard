@@ -1,0 +1,23 @@
+#
+# Sample guard policy to ensure proper Step Functions design
+#
+# Select from Resources section of the template all StateMachine resources (SAM and non SAM)
+#
+let state_machines = Resources.*[
+    Type in [
+        'AWS::StepFunctions::StateMachine',
+        'AWS::Serverless::StateMachine'
+    ]
+]
+
+rule state_machines_require_log_configuration when %state_machines !empty {
+    %state_machines {
+        Properties.LoggingConfiguration !empty
+    }
+}
+
+rule state_machines_require_tags when %state_machines !empty {
+    %state_machines {
+        Properties.Tags !empty
+    }
+}

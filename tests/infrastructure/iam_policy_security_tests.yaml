@@ -1,0 +1,128 @@
+---
+- name: Empty template should PASS
+  input: {}
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: SKIP
+- name: Template with policies permitting global * access should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action: '*'
+              Resource: '*'
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: FAIL
+- name: Template with policies permitting global * access should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action: 
+                - '*'
+              Resource: '*'
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: FAIL      
+- name: Template with policies permitting scoped actions access should PASS
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action:
+                - cloudwatch:*
+              Resource: '*'
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: PASS
+- name: Template with policies permitting scoped actions access should PASS
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action:
+                - "*"
+              Resource:
+                - arn:aws:s3:::aws-glue-*/*
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: PASS      
+- name: Template with policies permitting scoped actions access should SKIP
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action:
+                - cloudwatch:*
+              Resource:
+                - arn:aws:s3:::aws-glue-*/*
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-*/*
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: SKIP
+      iam_managed_policy_not_attached_to_users: PASS
+- name: Template with policy associated to user should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              Action:
+                - cloudwatch:*
+              Resource:
+                - arn:aws:s3:::aws-glue-*/*
+          Users:
+            - testUser
+            - testUser2
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: SKIP
+      iam_managed_policy_not_attached_to_users: FAIL
+- name: Template with policy having effect combined with NotAction should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - 
+              Effect: Allow
+              NotAction: "s3:DeleteBucket"
+              Resource:
+                - arn:aws:s3:::aws-glue-*/*
+  expectations:
+    rules:
+      iam_managed_policy_no_global_access: SKIP
+      iam_managed_policy_not_attached_to_users: PASS
+      iam_managed_policy_not_using_effect_not_action: FAIL

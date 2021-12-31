@@ -1,0 +1,214 @@
+---
+- name: Empty template should PASS
+  input: {}
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+- name: Template with bucket missing public access restriction should FAIL
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: FAIL
+      s3_buckets_ensure_sse_encryption: PASS
+- name: Template with bucket missing restriction should FAIL
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          PublicAccessBlockConfiguration:
+            RestrictPublicBuckets: false
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: FAIL
+      s3_buckets_ensure_sse_encryption: PASS
+- name: Template with bucket should PASS
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          PublicAccessBlockConfiguration:
+            RestrictPublicBuckets: true
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: PASS
+      s3_buckets_ensure_sse_encryption: PASS
+- name: Template with bucket missing sse encryption should FAIL
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          PublicAccessBlockConfiguration:
+            RestrictPublicBuckets: true
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: PASS
+      s3_buckets_ensure_sse_encryption: FAIL
+- name: Template with bucket policies permitting cross accounts w/valid account should PASS
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - Action:
+              - s3:GetBucketAcl
+              - s3:GetObject*
+              - s3:ListBucket
+              Effect: Allow
+              Principal:
+                AWS: arn:aws:iam::541623049223:root
+              Resource:
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+      s3_bucket_policy_cross_account_restrictions: PASS
+      s3_bucket_policy_no_global_cross_accounts: PASS
+- name: Template with bucket policies permitting cross accounts w/invalid account should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - Action:
+              - s3:GetObject*
+              Effect: Allow
+              Principal:
+                AWS: arn:aws:iam::1111111:root
+              Resource:
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+      s3_bucket_policy_cross_account_restrictions: FAIL
+      s3_bucket_policy_no_global_cross_accounts: PASS
+- name: Template with bucket policies permitting cross accounts w/global AWS.* access should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - Action:
+              - s3:GetObject*
+              Effect: Allow
+              Principal:
+                AWS: "*"
+              Resource:
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+      s3_bucket_policy_cross_account_restrictions: FAIL
+      s3_bucket_policy_no_global_cross_accounts: FAIL
+- name: Template with bucket policies permitting cross accounts w/global "*" access should FAIL
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - Action:
+              - s3:GetObject*
+              Effect: Allow
+              Principal: "*"
+              Resource:
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+      s3_bucket_policy_cross_account_restrictions: FAIL
+      s3_bucket_policy_no_global_cross_accounts: FAIL
+- name: Template with bucket policies permitting cross accounts w/global "*" DENY access should SKIP
+  input:
+    Resources: 
+      TestBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+            - Action:
+              - s3:GetObject*
+              Effect: Deny
+              Principal: "*"
+              Resource:
+                - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_block_at_account_level: SKIP
+      s3_buckets_ensure_sse_encryption: SKIP
+      s3_bucket_policy_cross_account_restrictions: SKIP
+      s3_bucket_policy_no_global_cross_accounts: SKIP
+- name: Template with bucket Name (no CF substitutions) DNS compliant should PASS
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName:
+            company-1111111-us-east-1-dev-clarifi-raw
+  expectations:
+    rules:
+      s3_bucket_policy_no_global_cross_accounts: SKIP
+      s3_buckets_names_are_dns_compliant: PASS
+- name: Template with bucket Name NOT DNS compliant should FAIL
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName:
+            company.1111111-us-east-1-dev-clarifi-raw
+  expectations:
+    rules:
+      s3_buckets_names_are_dns_compliant: FAIL
+- name: Template with bucket Name (w CF substitutions) DNS compliant should PASS
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName:
+            Fn::Sub: company-${AWS::AccountId}-${AWS::Region}-${AppEnv}-clarifi-raw
+  expectations:
+    rules:
+      s3_bucket_policy_no_global_cross_accounts: SKIP
+      s3_buckets_names_are_dns_compliant: SKIP

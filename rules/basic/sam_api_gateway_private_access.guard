@@ -1,0 +1,34 @@
+#
+# Sample SAM guard policy for API gateway checks.
+#
+# Select from Resources section of the template all ApiGateway resources 
+#
+let api_gws = Resources.*[ Type == 'AWS::Serverless::Api' ]
+
+#
+# Rule intent 
+# a) All Api instances deployed must be private 
+# b) All Api instances must have a resource policy defined
+#
+# Expectations:
+# 1) SKIP when there are not API Gateway instances in the template
+# 2) PASS when ALL ApiGateway instances MUST be "PRIVATE" and 
+#              ALL ApiGateway instance have a policy defined
+# 3) FAIL otherwise
+#
+#
+
+rule apigateway_is_private when %api_gws !empty {
+  %api_gws {
+    # must be private and have list of vpc endpoints
+    Properties.EndpointConfiguration.Type[*] == "PRIVATE"
+    Properties.EndpointConfiguration.VPCEndpointIds !empty
+  }
+}
+
+rule apigateway_has_resource_policy_statement when apigateway_is_private {
+  %api_gws {
+  	Properties.Auth.ResourcePolicy !empty
+  }
+}
+

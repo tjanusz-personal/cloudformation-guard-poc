@@ -1,0 +1,27 @@
+#
+# Sample guard policy for Log Group Retention Policy Checks
+#
+# Select from Resources section of the template all LogGroups
+#
+let log_groups = Resources.*[ Type == 'AWS::Logs::LogGroup' ]
+
+#
+# Rule intent 
+# a) All LogGroups must have a retention policy
+# b) All LogGroups must have a retention value between 14 and 365 days
+#
+# Expectations:
+# 1) SKIP when there are not Log Groups in the role
+# 2) PASS when ALL LogGroups have retention policy between 14 and 365
+# 3) FAIL otherwise
+#
+#
+
+
+rule log_group_retention_policy when %log_groups !empty {
+  %log_groups {
+    Properties.RetentionInDays IN r[14,365]
+  }
+}
+
+

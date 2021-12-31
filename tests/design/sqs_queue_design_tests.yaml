@@ -1,0 +1,32 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      sqs_queues_require_redrive_policy: SKIP
+      sqs_queues_require_tags: SKIP
+- name: Template with SQS Queue and no Redrive policy and no tags should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+  expectations:
+    rules:
+      sqs_queues_require_redrive_policy: FAIL
+      sqs_queues_require_tags: FAIL
+- name: Template with SQS Queue having Redrive policy and tags should PASS
+  input:
+    Resources: 
+      cxtJobQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          RedrivePolicy: "someJsonString"
+          Tags:
+            - app_name: claims-gateway
+            - project: claims-gateway
+            - team: cxt
+            - app_env: dev
+  expectations:
+    rules:
+      sqs_queues_require_redrive_policy: PASS
+      sqs_queues_require_tags: PASS

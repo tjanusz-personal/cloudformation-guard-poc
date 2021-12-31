@@ -1,0 +1,18 @@
+#
+# Sample guard policy to ensure proper SQS design
+#
+# Select from Resources section of the template all SQS resources 
+#
+let sqs_queues = Resources.*[ Type == 'AWS::SQS::Queue' ]
+
+rule sqs_queues_require_redrive_policy when %sqs_queues !empty {
+    %sqs_queues {
+        Properties.RedrivePolicy !empty
+    }
+}
+
+rule sqs_queues_require_tags when %sqs_queues !empty {
+    %sqs_queues {
+        Properties.Tags !empty
+    }
+}

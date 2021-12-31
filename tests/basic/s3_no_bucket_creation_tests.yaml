@@ -1,0 +1,22 @@
+---
+- name: Empty template should PASS
+  input: {}
+  expectations:
+    rules:
+      s3_buckets_should_not_be_created: PASS
+- name: Template with bucket should FAIL
+  input:
+    Resources: 
+      TestBucket:
+        Type: AWS::S3::Bucket
+  expectations:
+    rules:
+      s3_buckets_should_not_be_created: FAIL
+- name: Template without bucket should PASS
+  input:
+    Resources: 
+      TestApi:
+        Type: AWS::Serverless::Api
+  expectations:
+    rules:
+      s3_buckets_should_not_be_created: PASS

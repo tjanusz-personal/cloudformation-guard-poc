@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Sample SAM Service
+
+Parameters:
+  CXTFunctionRole:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Iam/PmlLambdaExecutionRole
+  CXTVPCEndpointId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Vpc/VpcEndpointId
+  CXTSecurityGroupId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Vpc/SecurityGroupLambdaAccess
+  CXTSubnetIds:
+    Type: 'AWS::SSM::Parameter::Value<List<String>>'
+    Default: /Vpc/SubnetsPrivateIds
+
+Resources:
+  SampleApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Sample Api
+      StageName: Dev
+      EndpointConfiguration:
+        Type: PRIVATE
+        VPCEndpointIds:
+          - !Ref CXTVPCEndpointId
+      Auth:
+        ResourcePolicy:
+          CustomStatements: {
+            Effect: 'Allow',
+            Action: 'execute-api:Invoke',
+            Resource: [ 'execute-api:/*/*/*' ],
+            Principal: '*'
+          }
+      Tags:
+        app_name: sample-service
+        project: samples
+        team: team1
+        app_env: dev
+
+  MainFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/sample-service/
+      Handler: com.handler.MainHandler::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Timeout: 120
+      ReservedConcurrentExecutions: 10 # Maximum number of concurrent executions
+      Role: !Ref CXTFunctionRole
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref CXTSecurityGroupId
+        SubnetIds: !Ref CXTSubnetIds
+      Events:
+        PostEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SampleApi
+            Path: /{proxy+}
+            Method: POST
+        GetEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SampleApi
+            Path: /{proxy+}
+            Method: GET
+        PutEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SampleApi
+            Path: /{proxy+}
+            Method: PUT
+        DeleteEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SampleApi
+            Path: /{proxy+}
+            Method: DELETE
+      Tags:
+        app_name: sample-service
+        project: samples
+        team: team1
+        app_env: dev

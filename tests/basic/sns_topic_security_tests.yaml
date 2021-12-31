@@ -1,0 +1,107 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: SKIP
+      sns_topic_policy_not_permitting_global_access: SKIP
+- name: Template with SNS Topic no KmsId should FAIL
+  input:
+    Resources: 
+      MyTopic:
+        Type: AWS::SNS::Topic
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: FAIL
+      sns_topic_policy_not_permitting_global_access: SKIP
+- name: Template with SNS Topic having Kms should PASS
+  input:
+    Resources: 
+      MyTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          KmsMasterKeyId: alias/aws/sns
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: PASS
+      sns_topic_policy_not_permitting_global_access: SKIP
+- name: Template with SNS Topic ALLOW policy should PASS
+  input:
+    Resources: 
+      TestTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          KmsMasterKeyId: alias/aws/sns
+      TestTopicPolicy:
+        Type: AWS::SNS::TopicPolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SNS:Publish" 
+                  - "SNS:Receive"
+                Effect: "Allow"
+                Resource: "arn:aws:sns:us-east-2:444455556666:topic1"
+                Principal:  
+                  AWS: 
+                    - "111122223333"  
+              - 
+                Action: 
+                  - "SNS:Publish" 
+                  - "SNS:Receive"
+                Effect: "Deny"
+                Resource: "arn:aws:sns:us-east-2:444455556666:topic1"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: PASS
+      sns_topic_policy_not_permitting_global_access: PASS
+- name: Template with SNS Topic and Allow * policy should FAIL
+  input:
+    Resources: 
+      TestTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          KmsMasterKeyId: alias/aws/sns
+      TestTopicPolicy:
+        Type: AWS::SNS::TopicPolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SNS:Publish" 
+                  - "SNS:Receive"
+                Effect: "Allow"
+                Resource: "arn:aws:sns:us-east-2:444455556666:topic1"
+                Principal:  "*"
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: PASS
+      sns_topic_policy_not_permitting_global_access: FAIL
+- name: Template with SNS Queue and Allow '' policy should FAIL
+  input:
+    Resources: 
+      TestTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          KmsMasterKeyId: alias/aws/sns
+      TestTopicPolicy:
+        Type: AWS::SNS::TopicPolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SNS:Publish" 
+                  - "SNS:Receive"
+                Effect: "Allow"
+                Resource: "arn:aws:sns:us-east-2:444455556666:topic1"
+                Principal:  ""
+  expectations:
+    rules:
+      sns_topics_use_default_encryption: PASS
+      sns_topic_policy_not_permitting_global_access: FAIL

@@ -1,0 +1,28 @@
+#
+# Sample guard policy to ensure proper Glue Job design
+#
+# Rule intent 
+# a) All Glue jobs have timeout less than 2 hours
+#
+# Expectations:
+# 1) SKIP when there are not matching column types in the template
+# 2) PASS when ALL jobs timeout less than 2 hours
+# 3) FAIL otherwise
+#
+#
+
+# Select from Resources section of the template all Glue Job resources 
+#
+let glue_jobs = Resources.*[ Type == 'AWS::Glue::Job' ]
+
+rule glue_jobs_must_have_timeout when %glue_jobs !empty {
+    %glue_jobs {
+        Properties.Timeout IN r[5,120]
+    }
+}
+
+rule glue_jobs_must_retry_at_least_once when %glue_jobs !empty {
+    %glue_jobs {
+        Properties.MaxRetries IN r[1,10]
+    }
+}

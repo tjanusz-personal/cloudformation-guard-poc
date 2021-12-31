@@ -1,0 +1,29 @@
+#
+# Sample guard policy to ensure no EventBus elements exist with a policy permitting public access 
+
+#
+# Rule intent 
+# A) All EventBridget Bus instances don't open access
+#
+# Expectations:
+# 1) SKIP when there are no EventBus instances in the template
+# 2) PASS when ALL EventBus instance have:
+#               SNS Policy document not permitting global access
+# 3) FAIL otherwise
+#
+
+# Select from Resources section of the template all EventBus 
+#
+let event_bus_policies = Resources.*[ Type == 'AWS::Events::EventBusPolicy' ]
+
+let invalid_principals = ["*", ""]
+
+rule event_bus_policy_not_permitting_global_access when %event_bus_policies !empty {
+    %event_bus_policies {
+       some Properties.Statement[*] {
+            Principal.AWS[*] not in %invalid_principals
+            Effect == "Allow"
+        }
+    }
+}
+

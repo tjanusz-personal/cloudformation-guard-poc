@@ -1,0 +1,50 @@
+#
+# Sample guard policy to enforce IAM policy security
+#
+
+#
+# Rule intent 
+# a) All IAM policy can't give full admin access
+# b) All IAM policy are NOT attached to users
+# c) All IAM policy do NOT use Effect Allow combined with NotAction
+# 
+# TODO: 
+#   
+#   
+
+let iam_policies = Resources.*[ Type == 'AWS::IAM::ManagedPolicy' ]
+
+let iam_global_access = [ "*", "" ]
+
+rule iam_managed_policy_no_global_access when %iam_policies !empty {
+    %iam_policies {
+        Properties.PolicyDocument.Statement[*] {
+            when Effect ==  "Allow" {
+                when Action == "*" {
+                    Resource != "*"
+                }
+                when Resource == "*" {
+                    Action != "*"
+                }
+            }
+        }
+    }
+}
+
+rule iam_managed_policy_not_attached_to_users when %iam_policies !empty {
+    %iam_policies {
+        Properties.Users empty
+    }
+}
+
+rule iam_managed_policy_not_using_effect_not_action when %iam_policies !empty {
+    %iam_policies {
+        Properties.PolicyDocument.Statement[*] {
+            when Effect ==  "Allow" {
+                when NotAction !empty {
+                    NotAction empty
+                }
+            }
+        }
+    }
+}

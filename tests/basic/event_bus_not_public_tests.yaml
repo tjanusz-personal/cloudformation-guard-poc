@@ -1,0 +1,66 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      event_bus_policy_not_permitting_global_access: SKIP
+- name: Template with BusPolicy ALLOW policy should PASS
+  input:
+    Resources: 
+      TestBus:
+        Type: AWS::Events::EventBus
+      TestBusPolicy:
+        Type: AWS::Events::EventBusPolicy
+        Properties:
+          Statement: 
+              Action: 
+                - "events:PutEvent" 
+                - "events:PutRule"
+              Effect: "Allow"
+              Resource: "arn:aws:events:us-east-2:444455556666:bus1"
+              Principal:  
+                AWS: 
+                  - "111122223333"  
+  expectations:
+    rules:
+      event_bus_policy_not_permitting_global_access: PASS
+- name: Template with BusPolicy ALLOW policy with * should FAIL
+  input:
+    Resources: 
+      TestBus:
+        Type: AWS::Events::EventBus
+      TestBusPolicy:
+        Type: AWS::Events::EventBusPolicy
+        Properties:
+          Statement:
+              Action: 
+                - "events:PutEvent" 
+                - "events:PutRule"
+              Effect: "Allow"
+              Resource: "arn:aws:events:us-east-2:444455556666:bus1"
+              Principal:  
+                AWS: 
+                  - "*"  
+  expectations:
+    rules:
+      event_bus_policy_not_permitting_global_access: FAIL
+- name: Template with BusPolicy ALLOW policy with "" should FAIL
+  input:
+    Resources: 
+      TestBus:
+        Type: AWS::Events::EventBus
+      TestBusPolicy:
+        Type: AWS::Events::EventBusPolicy
+        Properties:
+          Statement:
+              Action: 
+                - "events:PutEvent" 
+                - "events:PutRule"
+              Effect: "Allow"
+              Resource: "arn:aws:events:us-east-2:444455556666:bus1"
+              Principal:  
+                AWS: 
+                  - ""
+  expectations:
+    rules:
+      event_bus_policy_not_permitting_global_access: FAIL

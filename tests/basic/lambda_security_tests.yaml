@@ -1,0 +1,30 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      lambda_assigns_role: SKIP
+      lambda_assigns_vpc: SKIP
+- name: Template with Lambda no Role should FAIL
+  input:
+    Resources: 
+      TestLambda:
+        Type: AWS::Lambda::Function
+  expectations:
+    rules:
+      lambda_assigns_role: FAIL
+      lambda_assigns_vpc: FAIL
+- name: Template with Lambda with Role should PASS
+  input:
+    Resources: 
+      TestLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Role: testRole
+          VpcConfig:
+            SecurityGroupIds:
+              - !Ref CFNLambdaSecGroup
+  expectations:
+    rules:
+      lambda_assigns_role: PASS
+      lambda_assigns_vpc: PASS

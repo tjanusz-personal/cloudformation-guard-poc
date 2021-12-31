@@ -1,0 +1,54 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      state_machines_require_log_configuration: SKIP
+      state_machines_require_tags: SKIP
+- name: Template with State Machine and no logging or tags FAIL
+  input:
+    Resources: 
+      TestStateMachine:
+        Type: AWS::StepFunctions::StateMachine
+  expectations:
+    rules:
+      state_machines_require_log_configuration: FAIL
+      state_machines_require_tags: FAIL
+- name: Template with Log and tags PASS
+  input:
+    Resources: 
+      TestStateMachine:
+        Type: AWS::StepFunctions::StateMachine
+        Properties:
+          LoggingConfiguration:
+            Destinations:
+              - CloudWatchLogsLogGroup:
+                LogGroupArn: !GetAtt CFNStateMachineLogGroupArchiveRa.Arn
+          Tags:
+            - app_name: clarifi
+            - app_env: dev
+            - app_tier: "3" 
+            - team: integrators
+  expectations:
+    rules:
+      state_machines_require_log_configuration: PASS
+      state_machines_require_tags: PASS
+- name: SAM Template with Log and tags PASS
+  input:
+    Resources: 
+      TestStateMachine:
+        Type: AWS::Serverless::StateMachine
+        Properties:
+          LoggingConfiguration:
+            Destinations:
+              - CloudWatchLogsLogGroup:
+                LogGroupArn: !GetAtt CFNStateMachineLogGroupArchiveRa.Arn
+          Tags:
+            - app_name: clarifi
+            - app_env: dev
+            - app_tier: "3" 
+            - team: integrators
+  expectations:
+    rules:
+      state_machines_require_log_configuration: PASS
+      state_machines_require_tags: PASS

@@ -1,0 +1,29 @@
+#
+# Sample SAM guard policy for Lambda checks.
+#
+# Select from Resources section of the template all Function resources 
+#
+let sam_lambda_defs = Resources.*[ Type == 'AWS::Serverless::Function' ]
+
+# pull out log groups dependsOn 
+let sam_log_group_refs = Resources.*[ Type == 'AWS::Logs::LogGroup' ].DependsOn
+
+# TODO: need to figure out how to handle the situation where there is no DependsOn attribute
+# in the logGroup (which is normal)
+# let sam_log_group_refs = Resource.*[
+#    Type == 'AWS:Logs::LogGroup'
+#    DependsOn !empty
+#]
+
+rule sam_lambda_enforces_log_retention when %sam_lambda_defs !empty {
+    # pull out all Log Group References at resource level
+    let sam_log_groups_resources = some Resources.%sam_log_group_refs
+    %sam_log_groups_resources !empty
+    
+    # now filter them down to only the Lambda types
+    let sam_functions = %sam_log_groups_resources[Type == "AWS::Serverless::Function"]
+    %sam_functions !empty
+
+    # these types should be 
+    %sam_functions IN %sam_lambda_defs
+}

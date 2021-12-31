@@ -1,0 +1,7 @@
+#
+# Sample guard policy to ensure no S3 bucket resources exist.
+#
+
+rule s3_buckets_should_not_be_created {
+    Resources.*[ Type == 'AWS::S3::Bucket' ] empty
+}

@@ -1,0 +1,85 @@
+#
+# Sample guard policy to enforce S3 bucket security
+#
+
+#
+# Rule intent 
+# a) All Buckets must be created with default encryption
+# b) All Buckets must block public access 
+# c) Any Bucket policies permitting public access must be limited to cross account only
+# d) All Bucket names should NOT include any '.' characters (DNS compliance)
+#
+# TODO: 
+#   Enforce secure transport default is on
+#   Lifecycle configuration
+
+let s3_buckets = Resources.*[ Type == 'AWS::S3::Bucket' ]
+
+rule s3_buckets_block_at_account_level when %s3_buckets !empty {
+    %s3_buckets.Properties.PublicAccessBlockConfiguration {
+        RestrictPublicBuckets == true
+        BlockPublicAcls == true
+        # BlockPublicPolicy == true
+        IgnorePublicAcls == true
+    }
+}
+
+rule s3_buckets_ensure_sse_encryption when %s3_buckets !empty {
+    %s3_buckets {
+        # TODO: figure out what to check for.. Right now just ensuring having
+        # SSEAlgorithm
+        some Properties.BucketEncryption.ServerSideEncryptionConfiguration[*] {
+            ServerSideEncryptionByDefault.SSEAlgorithm == /AES256/
+        }
+    }
+}
+
+rule s3_buckets_names_are_dns_compliant when %s3_buckets !empty {
+    %s3_buckets.Properties {
+        # if the bucket name uses Fn::Sub: it seems like it's not parsed correctly
+        when BucketName is_string {
+            BucketName == /^[^.]*$/    
+        }
+    }
+}
+
+# Dave: one hard option is to specify ONLY the accounts we want to have cross account access
+# this is super secure but requires us to update the rule for each account we add cross account
+# access to (maybe safest option)
+let allowed_accounts = [ 
+    /arn:aws:iam::541623049223:root/,
+    /arn:aws:iam::706894921654:root/ ]
+
+let s3_bucket_policies = Resources.*[ Type == 'AWS::S3::BucketPolicy' ]
+
+rule s3_bucket_policy_cross_account_restrictions when %s3_bucket_policies !empty {
+    %s3_bucket_policies {
+        Properties.PolicyDocument.Statement[*] {
+            when Effect ==  "Allow" {
+                when Principal is_string {
+                    Principal in  %allowed_accounts 
+                }
+                when Principal.AWS exists {
+                    Principal.AWS[*] in %allowed_accounts
+                }
+            }
+        }
+    }
+}
+
+# Dave: another option is to ensure only no '*' or '' access permitted
+let s3_global_users = [ "*", "" ]
+rule s3_bucket_policy_no_global_cross_accounts when %s3_bucket_policies !empty {
+    %s3_bucket_policies {
+        Properties.PolicyDocument.Statement[*] {
+            when Effect ==  "Allow" {
+                when Principal is_string {
+                    Principal not in %s3_global_users  
+                }
+                when Principal.AWS exists {
+                    Principal.AWS[*] not in %s3_global_users
+                }
+            }
+        }
+    }
+}

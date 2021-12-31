@@ -1,0 +1,60 @@
+---
+- name: Empty template should SKIP
+  input: {}
+  expectations:
+    rules:
+      sam_apigateway_restricts_root_to_non_source_vpc: SKIP
+- name: Api without any attributes should FAIL
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+  expectations:
+    rules:
+      sam_apigateway_restricts_root_to_non_source_vpc: FAIL
+- name: API with Private, Policy and Deny global should PASS
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+        Properties:
+          EndpointConfiguration:
+            Type: PRIVATE
+            VPCEndpointIds: 
+              - SomeVal
+          Auth:
+            ResourcePolicy:
+              CustomStatements:
+              - Effect: Deny
+                Principal: "*"
+                Action: "execute-api:Invoke"
+                Resource: "execute-api:/*/*/*"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      sam_apigateway_restricts_root_to_non_source_vpc: PASS
+- name: API with explicit Allow should FAIL
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+        Properties:
+          EndpointConfiguration:
+            Type: PRIVATE
+            VPCEndpointIds: 
+              - SomeVal
+          Auth:
+            ResourcePolicy:
+              CustomStatements:
+              - Effect: Allow
+                Principal: "*"
+                Action: "execute-api:Invoke"
+                Resource: "execute-api:/*/*/*"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      sam_apigateway_restricts_root_to_non_source_vpc: FAIL

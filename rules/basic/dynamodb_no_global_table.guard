@@ -1,0 +1,7 @@
+#
+# Sample guard policy to ensure no DynamoDB Global Table definitions exist
+#
+
+rule dynamo_db_no_global_tables {
+    Resources.*[ Type == 'AWS::DynamoDB::GlobalTable' ] empty
+}

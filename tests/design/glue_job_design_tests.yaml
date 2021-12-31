@@ -1,0 +1,30 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      glue_jobs_must_have_timeout: SKIP
+      glue_jobs_must_retry_at_least_once: SKIP
+- name: Template with Glue Job having timeout/retry should PASS
+  input:
+    Resources: 
+      GlueJob1:
+        Type: AWS::Glue::Job
+        Properties:
+          Timeout: 60
+          MaxRetries: 1
+  expectations:
+    rules:
+      glue_jobs_must_have_timeout: PASS
+      glue_jobs_must_retry_at_least_once: PASS
+- name: Template with Glue Job missing timeout/retry should FAIL
+  input:
+    Resources: 
+      GlueJob1:
+        Type: AWS::Glue::Job
+        Properties:
+          Name: blah
+  expectations:
+    rules:
+      glue_jobs_must_have_timeout: FAIL
+      glue_jobs_must_retry_at_least_once: FAIL

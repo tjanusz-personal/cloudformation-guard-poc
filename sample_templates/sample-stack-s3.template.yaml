@@ -1,0 +1,420 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Stack to manage S3 buckets
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+      - W3010
+      regions:
+      - us-east-1
+      - us-east-2
+Outputs:
+  ArnBucketAwsAthenaQueryResults:
+    Value:
+      Ref: BucketAwsAthenaQueryResults
+  ArnBucketAwsGlueScripts:
+    Value:
+      Ref: BucketAwsGlueScripts
+  ArnBucketAwsGlueTemporary:
+    Value:
+      Ref: BucketAwsGlueTemporary
+  ArnBucketAppanalyticsCode:
+    Value:
+      Ref: BucketAppanalyticsCode
+  ArnBucketRaw:
+    Value:
+      Ref: BucketRaw
+  ArnBucketUdl:
+    Value:
+      Ref: BucketUdl
+Parameters:
+  AppEnv:
+    Default: dev
+    Description: The current application environment (dev, tst, prd)
+    Type: String
+  AppName:
+    Default: sample
+    Type: String
+Resources:
+  BucketAwsAthenaQueryResults:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: aws-athena-query-results-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: team1
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketAwsGlueScripts:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: aws-glue-scripts-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: team1
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketAwsGlueTemporary:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: aws-glue-temporary-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: team1
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketAppanalyticsCode:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: ${AWS::AccountId}-${AWS::Region}-${AppEnv}-appanalytics-code
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: team1
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketRaw:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: ${AWS::AccountId}-${AWS::Region}-${AppEnv}-raw
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: integrators
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketUdl:
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      BucketName:
+        Fn::Sub: ${AWS::AccountId}-${AWS::Region}-${AppEnv}-udl
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+      - Key: team
+        Value: integrators
+      - Key: app_name
+        Value:
+          Ref: AppName
+      - Key: app_env
+        Value:
+          Ref: AppEnv
+      VersioningConfiguration:
+        Status: Suspended
+    Type: AWS::S3::Bucket
+  BucketPolicyRaw:
+    Properties:
+      Bucket:
+        Ref: BucketRaw
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetBucketAcl
+          - s3:GetObject*
+          - s3:ListBucket
+          Effect: Allow
+          Principal:
+            AWS: arn:aws:iam::541623049223:root
+          Resource:
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-raw
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-raw/*
+          Sid: AllowReadOnlyAccessPrdRaw
+        - Action:
+          - s3:GetBucketAcl
+          - s3:GetObject
+          - s3:GetObjectAcl
+          - s3:GetObjectVersion
+          - s3:ListBucket
+          Effect: Allow
+          Principal:
+            AWS: arn:aws:iam::706894921654:root
+          Resource:
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-raw
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-raw/*
+          Sid: AllowReadOnlyAccessBus
+        Version: '2012-10-17'
+    Type: AWS::S3::BucketPolicy
+  BucketPolicyUdl:
+    Properties:
+      Bucket:
+        Ref: BucketUdl
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetBucketAcl
+          - s3:GetObject
+          - s3:GetObjectAcl
+          - s3:GetObjectVersion
+          - s3:ListBucket
+          Effect: Allow
+          Principal:
+            AWS: arn:aws:iam::706894921654:root
+          Resource:
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-udl
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-udl/*
+          Sid: AllowReadOnlyAccessBus
+        - Action:
+          - s3:GetBucketAcl
+          - s3:GetObject
+          - s3:GetObjectAcl
+          - s3:GetObjectVersion
+          - s3:ListBucket
+          Effect: Allow
+          Principal:
+            AWS: arn:aws:iam::541623049223:root
+          Resource:
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-udl
+          - Fn::Sub: arn:aws:s3::${AWS::AccountId}-${AWS::Region}-${AppEnv}-udl/*
+          Sid: AllowReadOnlyAccessPrd
+        Version: '2012-10-17'
+    Type: AWS::S3::BucketPolicy
+  SSMParameterBucketAwsAthenaQueryResults:
+    Properties:
+      Description: ARN for BucketAwsAthenaQueryResults
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketAwsAthenaQueryResults
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketAwsAthenaQueryResults
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketAwsGlueScripts:
+    Properties:
+      Description: ARN for BucketAwsGlueScripts
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketAwsGlueScripts
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketAwsGlueScripts
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketAwsGlueTemporary:
+    Properties:
+      Description: ARN for BucketAwsGlueTemporary
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketAwsGlueTemporary
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketAwsGlueTemporary
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketAppanalyticsCode:
+    Properties:
+      Description: ARN for BucketAppanalyticsCode
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketAppanalyticsCode
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketAppanalyticsCode
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketRaw:
+    Properties:
+      Description: ARN for BucketRaw
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketRaw
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketRaw
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketUdl:
+    Properties:
+      Description: ARN for BucketUdl
+      Name:
+        Fn::Join:
+        - ''
+        - - Fn::Sub: /${AppName}/S3/
+          - Ref: BucketUdl
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - BucketUdl
+        - Arn
+    Type: AWS::SSM::Parameter
+  SSMParameterBucketNamesList:
+    Properties:
+      Description: A list of the bucket names for 
+      Name:
+        Fn::Sub: /${AppName}/S3/BucketNamesList
+      Tags:
+        app_env:
+          Ref: AppEnv
+        app_name:
+          Ref: AppName
+      Tier: Standard
+      Type: StringList
+      Value:
+        Fn::Join:
+        - ','
+        - - Ref: BucketAwsAthenaQueryResults
+          - Ref: BucketAwsGlueScripts
+          - Ref: BucketAwsGlueTemporary
+          - Ref: BucketAppanalyticsCode
+          - Ref: BucketRaw
+          - Ref: BucketUdl
+    Type: AWS::SSM::Parameter

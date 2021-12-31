@@ -1,0 +1,38 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      log_group_retention_policy: SKIP
+- name: Template with LogGroup and No retention policy FAIL
+  input:
+    Resources: 
+      CFNStateMachineLogGroupRaTransforms:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName: !Join ["-", ["/aws/stepfunction/clarifi-transform", !Ref CFNEnvPrefix, "ra-json"]]
+  expectations:
+    rules:
+      log_group_retention_policy: FAIL
+      - name: Template with LogGroup and Retention policy of 14 days PASS
+  input:
+    Resources: 
+      CFNStateMachineLogGroupRaTransforms:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName: !Join ["-", ["/aws/stepfunction/clarifi-transform", !Ref CFNEnvPrefix, "ra-json"]]
+          RetentionInDays: 14
+  expectations:
+    rules:
+      log_group_retention_policy: PASS
+- name: Template with LogGroup and Retention policy of 10 days FAIL
+  input:
+    Resources: 
+      CFNStateMachineLogGroupRaTransforms:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName: !Join ["-", ["/aws/stepfunction/clarifi-transform", !Ref CFNEnvPrefix, "ra-json"]]
+          RetentionInDays: 10
+  expectations:
+    rules:
+      log_group_retention_policy: FAIL

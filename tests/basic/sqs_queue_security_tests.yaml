@@ -1,0 +1,174 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: SKIP
+      sqs_queue_policy_exists: SKIP
+      sqs_queue_policy_required: SKIP
+      sqs_queue_policy_not_permitting_global_access: SKIP
+      sqs_queue_policy_only_permit_messages_from_vpc: SKIP
+- name: Template with SQS Queue no KmsId should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: FAIL
+      sqs_queue_policy_exists: SKIP
+      sqs_queue_policy_required: FAIL
+      sqs_queue_policy_not_permitting_global_access: SKIP
+      sqs_queue_policy_only_permit_messages_from_vpc: SKIP
+- name: Template with SQS Queue having Kms should PASS
+  input:
+    Resources: 
+      cxtJobQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: SKIP
+      sqs_queue_policy_required: FAIL
+      sqs_queue_policy_not_permitting_global_access: SKIP
+      sqs_queue_policy_only_permit_messages_from_vpc: SKIP
+- name: Template with SQS Queue and no policy should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: SKIP
+      sqs_queue_policy_required: FAIL
+      sqs_queue_policy_not_permitting_global_access: SKIP
+      sqs_queue_policy_only_permit_messages_from_vpc: SKIP
+- name: Template with SQS Queue and ALLOW policy should PASS
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+      TestQueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Allow"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Principal:  
+                  AWS: 
+                    - "111122223333"  
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Deny"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: PASS
+      sqs_queue_policy_required: PASS 
+      sqs_queue_policy_not_permitting_global_access: PASS
+      sqs_queue_policy_only_permit_messages_from_vpc: PASS
+- name: Template with SQS Queue and Allow * policy should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+      TestQueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Allow"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Principal:  "*"
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: PASS
+      sqs_queue_policy_required: PASS 
+      sqs_queue_policy_not_permitting_global_access: FAIL
+      sqs_queue_policy_only_permit_messages_from_vpc: FAIL
+- name: Template with SQS Queue and Allow '' policy should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+      TestQueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Allow"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Principal:  ""
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: PASS
+      sqs_queue_policy_required: PASS 
+      sqs_queue_policy_not_permitting_global_access: FAIL
+      sqs_queue_policy_only_permit_messages_from_vpc: FAIL
+- name: Template with SQS Queue and Allow '' policy should FAIL
+  input:
+    Resources: 
+      TestQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+          KmsMasterKeyId: alias/aws/sqs
+      TestQueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+          PolicyDocument:
+            Statement: 
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Allow"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Principal:  ""
+              - 
+                Action: 
+                  - "SQS:SendMessage" 
+                  - "SQS:ReceiveMessage"
+                Effect: "Deny"
+                Resource: "arn:aws:sqs:us-east-2:444455556666:queue2"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      sqs_queues_use_default_encryption: PASS
+      sqs_queue_policy_exists: PASS
+      sqs_queue_policy_required: PASS 
+      sqs_queue_policy_not_permitting_global_access: FAIL
+      sqs_queue_policy_only_permit_messages_from_vpc: PASS

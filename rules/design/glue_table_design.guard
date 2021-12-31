@@ -1,0 +1,48 @@
+#
+# Sample guard policy to ensure proper Glue Table design
+#
+# Rule intent 
+# a) All Glue table columns of type 'date' should suffix _dt
+# b) All Glue table columns of type 'timestamp' should suffix _ts
+# c) All Glue table columns with risk_id should be type /string/
+#
+# Expectations:
+# 1) SKIP when there are not matching column types in the template
+# 2) PASS when ALL date columns match standard
+#              ALL timestamp columns match standard
+# 3) FAIL otherwise
+#
+#
+
+# Select from Resources section of the template all Glue Tables resources 
+#
+let glue_tables = Resources.*[ Type == 'AWS::Glue::Table' ]
+
+rule glue_table_ensure_date_column_names when %glue_tables !empty {
+    %glue_tables {
+        let date_columns = this.Properties.TableInput.StorageDescriptor.Columns[Type=="date"]
+        when %date_columns !empty {
+            %date_columns.Name == /\w*_dt\b/
+        }
+    }
+}
+
+
+rule glue_table_ensure_ts_column_names when %glue_tables !empty {
+    %glue_tables {
+        let time_columns = this.Properties.TableInput.StorageDescriptor.Columns[Type=="timestamp"]
+        when %time_columns !empty {
+            %time_columns.Name == /\w*_ts\b/
+        }
+    }
+}
+
+
+rule glue_table_ensure_risk_id_string when %glue_tables !empty {
+    %glue_tables {
+        let risk_columns = this.Properties.TableInput.StorageDescriptor.Columns[Name=="risk_id"]
+        when %risk_columns !empty {
+            %risk_columns.Type == /string/
+        }
+    }
+}

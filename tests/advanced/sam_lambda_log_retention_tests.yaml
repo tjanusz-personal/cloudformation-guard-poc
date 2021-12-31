@@ -1,0 +1,74 @@
+- name: Template with Lambda having matching log group should PASS
+  input:
+    Resources: 
+      TestLambdaFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+          Role: testRole      
+      LambdaFunctionLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: TestLambdaFunction
+        Properties: 
+          RetentionInDays: 14
+          LogGroupName: !Join ["", ["/aws/lambda/", !Ref TestLambdaFunction]]      
+  expectations:
+    rules:
+      sam_lambda_enforces_log_retention: PASS
+- name: Template with 2 Lambdas having matching log group should PASS
+  input:
+    Resources: 
+      TestLambdaFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+          Role: testRole      
+      LambdaFunctionLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: TestLambdaFunction
+        Properties: 
+          RetentionInDays: 14
+          LogGroupName: !Join ["", ["/aws/lambda/", !Ref TestLambdaFunction]]      
+      TestLambdaFunction2:
+        Type: AWS::Serverless::Function
+        Properties:
+          Role: testRole      
+      LambdaFunctionLogGroup2:
+        Type: AWS::Logs::LogGroup
+        DependsOn: TestLambdaFunction2
+        Properties: 
+          RetentionInDays: 14
+          LogGroupName: !Join ["", ["/aws/lambda/", !Ref TestLambdaFunction2]]      
+  expectations:
+    rules:
+      sam_lambda_enforces_log_retention: PASS
+- name: Template with Lambda missing log group should FAIL
+  input:
+    Resources: 
+      TestLambdaFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+          Role: testRole      
+  expectations:
+    rules:
+      sam_lambda_enforces_log_retention: FAIL
+- name: Template with Lambda with multiple log groups should PASS
+  input:
+    Resources: 
+      TestLambdaFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+          Role: testRole      
+      LambdaFunctionLogGroup:
+        Type: AWS::Logs::LogGroup
+        DependsOn: TestLambdaFunction
+        Properties: 
+          RetentionInDays: 14
+          LogGroupName: !Join ["", ["/aws/lambda/", !Ref TestLambdaFunction]]      
+      LogGroupForOtherResource:
+        Type: AWS::Logs::LogGroup
+        DependsOn: SomeOtherResource        
+        Properties: 
+          RetentionInDays: 14
+          LogGroupName: "some/other/loggroup"      
+  expectations:
+    rules:
+      sam_lambda_enforces_log_retention: PASS

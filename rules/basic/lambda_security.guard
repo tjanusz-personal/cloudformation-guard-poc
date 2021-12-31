@@ -1,0 +1,33 @@
+#
+# Sample SAM guard policy for Lambda checks.
+#
+# Select from Resources section of the template all Lambda resources 
+#
+let lambda_defs = Resources.*[ Type == 'AWS::Lambda::Function' ]
+
+#
+# Rule intent 
+# a) All Lambdas must use Role (no policy)
+# b) All Lambdas must use VPC (network access)
+#
+# Expectations:
+# 1) SKIP when there are not Lambda instances in the template
+# 2) PASS when ALL Lambda instances use Roles
+#              ALL Lambda instances use Vpc 
+# 3) FAIL otherwise
+#
+#
+
+rule lambda_assigns_role when %lambda_defs !empty {
+  %lambda_defs {
+    Properties.Role !empty
+  }
+}
+
+rule lambda_assigns_vpc when %lambda_defs !empty {
+  %lambda_defs {
+    Properties.VpcConfig !empty
+  }
+}
+
+

@@ -1,0 +1,107 @@
+---
+- name: Empty template should skip
+  input: {}
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: SKIP
+      glue_table_ensure_ts_column_names: SKIP
+- name: Template with Glue Table Date columns SHOULD PASS
+  input:
+    Resources: 
+      GlueTable1:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: mib_inquiry_response_history
+            StorageDescriptor:
+              Columns:
+                - Name: policy_num
+                  Type: string
+                - Name: modified_dt
+                  Type: date
+                - Name: policy_dt
+                  Type: date
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: PASS
+      glue_table_ensure_ts_column_names: SKIP
+- name: Template with Glue Table Date columns invalid names SHOULD FAIL
+  input:
+    Resources: 
+      GlueTable1:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: mib_inquiry_response_history
+            StorageDescriptor:
+              Columns:
+                - Name: policy_d
+                  Type: date
+                - Name: policy_date
+                  Type: date
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: FAIL
+      glue_table_ensure_ts_column_names: SKIP
+- name: Template with Glue Table Timestamp columns SHOULD PASS
+  input:
+    Resources: 
+      GlueTable1:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: mib_inquiry_response_history
+            StorageDescriptor:
+              Columns:
+                - Name: answer_modification_ts
+                  Type: timestamp
+                - Name: modified_dt
+                  Type: date
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: PASS
+      glue_table_ensure_ts_column_names: PASS
+- name: Template with Glue Table Timestamp columns misnamed SHOULD FAIL
+  input:
+    Resources: 
+      GlueTable1:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: mib_inquiry_response_history
+            StorageDescriptor:
+              Columns:
+                - Name: answer_modification
+                  Type: timestamp
+                - Name: modified_dt
+                  Type: date
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: PASS
+      glue_table_ensure_ts_column_names: FAIL
+- name: Template with Glue Tables with risk Ids should PASS
+  input:
+    Resources: 
+      GlueTable1:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: mib_inquiry_response_history
+            StorageDescriptor:
+              Columns:
+                - Name: risk_id
+                  Type: string
+      GlueTable2:
+        Type: AWS::Glue::Table
+        Properties:
+          TableInput:
+            Name: table_name_2
+            StorageDescriptor:
+              Columns:
+                - Name: risk_id
+                  Type: string
+  expectations:
+    rules:
+      glue_table_ensure_date_column_names: SKIP
+      glue_table_ensure_ts_column_names: SKIP
+      glue_table_ensure_risk_id_string: PASS

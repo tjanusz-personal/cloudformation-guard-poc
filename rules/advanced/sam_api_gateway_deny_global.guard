@@ -1,0 +1,35 @@
+#
+# Sample SAM guard policy for API gateway checks.
+#
+# Select from Resources section of the template all ApiGateway resources 
+#
+let api_gws = Resources.*[ Type == 'AWS::Serverless::Api' ]
+
+#
+# Rule intent 
+# A) All Api instances must include a restrict root policy  
+#
+# Expectations:
+# 1) SKIP when there are not API Gateway instances in the template
+# 2) PASS when ALL ApiGateway instance have an explicit deny for root invocations
+#              
+# 3) FAIL otherwise
+#
+#
+
+rule sam_apigateway_restricts_root_to_non_source_vpc when %api_gws !empty {
+  %api_gws {
+    Properties {
+      # ALL ApiGateways must have atleast one IAM statement that has Condition keys with
+      # aws:sourceVpc and deny global access
+      some Auth.ResourcePolicy.CustomStatements[*] {
+        Condition.*[ keys == /aws:[sS]ource(Vpc|VPC|Vpce|VPCE)/ ] !empty
+        Condition.StringNotEquals !empty
+        Effect == "Deny"
+        Principal == "*"
+        Action == "execute-api:Invoke"
+        Resource == "execute-api:/*/*/*"
+      }
+    }
+  }
+}

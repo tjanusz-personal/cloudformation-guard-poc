@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  CFNLambdaIAMRole:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Iam/PmlLambdaExecutionRole
+  CFNEnvPrefix:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /env/prefix
+  CFNVpcEndpointId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Vpc/EndpointId
+  CFNVpcId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /Vpc/VpcId
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 3072
+    Runtime: python3.8
+    CodeUri: sample/
+
+Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+        AllowCredentials: False
+      Name: !Join [ "-", [ !Ref CFNEnvPrefix, "sample-api" ] ]
+      EndpointConfiguration:
+        Type: PRIVATE
+        VPCEndpointIds:
+          - !Ref CFNVpcEndpointId
+      Auth:
+        ResourcePolicy:
+          CustomStatements: [ {
+            "Effect": "Deny",
+            "Principal": "*",
+            "Action": "execute-api:Invoke",
+            "Resource": "execute-api:/*/*/*",
+            "Condition": {
+              "StringNotEquals": {
+                "aws:sourceVpc": !Ref CFNVpcId
+              }
+            }
+          },
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "execute-api:Invoke",
+              "Resource": "execute-api:/dev/POST/*"
+            } ]
+  SampleLambda1:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: term_calc/
+      Handler: calc_api_handler.illusPremiumLedger
+      FunctionName: !Join [ "-", [ !Ref CFNEnvPrefix, "SampleLambda1" ] ]
+      Role: !Ref CFNLambdaIAMRole
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /sample/api/v1/runFunc1
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  TestSecretDefinition:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: MyTestSecret
+
+  TestSecretPolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      ResourcePolicy: "policy_json"
+
+  TestS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: MyTestS3Bucket     
+    
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  SampleLambda1:
+    Description: "SampleLambda1 ARN"
+    Value: !GetAtt SampleLambda1.Arn

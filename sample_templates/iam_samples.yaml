@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Manage IAM resources
+Resources:
+  TestBucketPolicy1:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+        - 
+          Effect: Allow
+          Action: '*'
+          Resource: '*'
+      Users:
+      - TestUser1
+    
+  EventsExecutionPolicy1:
+    Properties:
+      Description: Allows Events to invoke Step Fns
+      ManagedPolicyName: EventsExecutionPolicy
+      Path:
+        Fn::Sub: /${AWS::AccountId}/${AWS::Region}/${AppEnv}/sample/
+      PolicyDocument:
+        Statement:
+        - Action:
+          - states:*
+          Effect: Allow
+          Resource: '*'
+        Version: '2012-10-17'
+    Type: AWS::IAM::ManagedPolicy
+
+  TestBucketPolicy2:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+        - 
+          Effect: Allow
+          NotAction: "s3:DeleteBucket"
+          Resource:
+            - arn:aws:s3:::aws-glue-*/*

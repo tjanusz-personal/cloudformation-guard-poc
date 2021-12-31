@@ -1,0 +1,22 @@
+---
+- name: Empty template should PASS
+  input: {}
+  expectations:
+    rules:
+      dynamo_db_no_global_tables: PASS
+- name: Template with GlobalTable should FAIL
+  input:
+    Resources: 
+      TestGlobalTable:
+        Type: AWS::DynamoDB::GlobalTable
+  expectations:
+    rules:
+      dynamo_db_no_global_tables: FAIL
+- name: Template with Standard table should PASS
+  input:
+    Resources: 
+      TestGlobalTable:
+        Type: AWS::DynamoDB::Table
+  expectations:
+    rules:
+      dynamo_db_no_global_tables: PASS

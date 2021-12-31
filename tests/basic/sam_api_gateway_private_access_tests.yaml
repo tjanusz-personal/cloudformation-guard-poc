@@ -1,0 +1,68 @@
+---
+- name: Empty template should SKIP
+  input: {}
+  expectations:
+    rules:
+      apigateway_is_private: SKIP
+      apigateway_has_resource_policy_statement: SKIP
+- name: Api without any attributes should FAIL
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+  expectations:
+    rules:
+      apigateway_is_private: FAIL
+      apigateway_has_resource_policy_statement: SKIP
+- name: Api with PRIVATE but no policy should FAIL
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+        Properties:
+          EndpointConfiguration:
+            Type: PRIVATE
+            VPCEndpointIds: 
+              - SomeVal
+  expectations:
+    rules:
+      apigateway_is_private: PASS
+      apigateway_has_resource_policy_statement: FAIL
+- name: API with REGIONAL should FAIL
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+        Properties:
+          EndpointConfiguration:
+            Type: REGIONAL
+            VPCEndpointIds: 
+              - SomeVal
+  expectations:
+    rules:
+      apigateway_is_private: FAIL
+      apigateway_has_resource_policy_statement: SKIP
+- name: API with Private, Policy should PASS
+  input:
+    Resources: 
+      apiGw:
+        Type: AWS::Serverless::Api
+        Properties:
+          EndpointConfiguration:
+            Type: PRIVATE
+            VPCEndpointIds: 
+              - SomeVal
+          Auth:
+            ResourcePolicy:
+              CustomStatements:
+              - Effect: Deny
+                Principal: "*"
+                Action: "execute-api:Invoke"
+                Resource: "execute-api:/*/*/*"
+                Condition:
+                  StringNotEquals:
+                    'aws:sourceVPC': vpc-12345678
+  expectations:
+    rules:
+      apigateway_is_private: PASS
+      apigateway_has_resource_policy_statement: PASS
